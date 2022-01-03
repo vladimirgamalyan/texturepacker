@@ -72,9 +72,11 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>.\src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>.\src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -88,6 +90,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -102,6 +106,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -139,7 +145,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\external\maxRectsBinPack\MaxRectsBinPack.cpp" />
+    <ClCompile Include="src\external\pugixml\pugixml.cpp" />
+    <ClCompile Include="src\StbImgLoader.cpp" />
+    <ClCompile Include="src\ImgLoaderExt.cpp" />
+    <ClCompile Include="src\ImgWriter.cpp" />
     <ClCompile Include="src\main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\external\cli11\CLI11.hpp" />
+    <ClInclude Include="src\external\maxRectsBinPack\MaxRectsBinPack.h" />
+    <ClInclude Include="src\external\maxRectsBinPack\Rect.h" />
+    <ClInclude Include="src\external\pugixml\pugiconfig.hpp" />
+    <ClInclude Include="src\external\pugixml\pugixml.hpp" />
+    <ClInclude Include="src\external\stb\stb_image.h" />
+    <ClInclude Include="src\external\stb\stb_image_write.h" />
+    <ClInclude Include="src\StbImgLoader.h" />
+    <ClInclude Include="src\ImgLoaderExt.h" />
+    <ClInclude Include="src\ImgWriter.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
