@@ -53,6 +53,12 @@ struct Size
 
 int main(int argc, char* argv[])
 {
+    const int spacingHor = 1;
+    const int spacingVer = 1;
+    const bool cropTexturesWidth = true;
+    const bool cropTexturesHeight = true;
+
+
     CLI::App app{ "Texture Packer" };
 
     std::string src;
@@ -64,6 +70,7 @@ int main(int argc, char* argv[])
 
     try
     {
+        // get png-file list
         std::vector<std::string> sources;
         for (const auto& p : std::filesystem::directory_iterator(src))
         {
@@ -72,11 +79,7 @@ int main(int argc, char* argv[])
                 sources.push_back(p.path().string());
         }
 
-        const int spacingHor = 1;
-        const int spacingVer = 1;
-        const bool cropTexturesWidth = true;
-        const bool cropTexturesHeight = true;
-
+        // load images and fill rectangle vector
         std::vector<rbp::RectSize> rects;
         std::vector<ImgLoaderExt> images(sources.size());
         for (size_t i = 0; i < sources.size(); ++i)
@@ -98,14 +101,18 @@ int main(int argc, char* argv[])
             {1024, 1024},
             {2048, 1024},
             {2048, 2048},
+            {4096, 2048},
+            {4096, 4096},
         };
-        std::vector<Size> result;
-        rbp::MaxRectsBinPack mrbp;
 
+        
+        // pack textures
+        rbp::MaxRectsBinPack mrbp;
+        std::vector<Size> textures;
         for (;;)
         {
             std::vector<rbp::Rect> arrangedRectangles;
-            auto glyphRectanglesCopy = rects;
+            auto rectsCopy = rects;
             Size lastSize;
 
             uint64_t allGlyphSquare = 0;
@@ -120,7 +127,7 @@ int main(int argc, char* argv[])
                     continue;
 
                 lastSize = ss;
-                rects = glyphRectanglesCopy;
+                rects = rectsCopy;
 
                 const auto workAreaW = ss.w - spacingHor;
                 const auto workAreaH = ss.h - spacingVer;
@@ -152,7 +159,7 @@ int main(int argc, char* argv[])
                 images[r.tag].flipped = w != r.width;
                 images[r.tag].x = x;
                 images[r.tag].y = y;
-                images[r.tag].page = static_cast<int>(result.size());
+                images[r.tag].page = static_cast<int>(textures.size());
 
                 assert(images[r.tag].flipped ? w == r.height && h == r.width : w == r.width && h == r.height);
 
@@ -166,11 +173,12 @@ int main(int argc, char* argv[])
             if (cropTexturesHeight)
                 lastSize.h = maxY;
 
-            result.push_back(lastSize);
+            textures.push_back(lastSize);
         }
 
+        // save textures and plist files
         std::stringstream ss;
-        for (size_t p = 0; p < result.size(); ++p)
+        for (size_t p = 0; p < textures.size(); ++p)
         {
             pugi::xml_document doc;
             auto decl = doc.append_child(pugi::node_declaration);
@@ -184,7 +192,7 @@ int main(int argc, char* argv[])
             rootDict.append_child("key").text().set("frames");
             auto frames = rootDict.append_child("dict");
 
-            ImgWriter imgWriter(result[p].w, result[p].h);
+            ImgWriter imgWriter(textures[p].w, textures[p].h);
     #ifdef _DEBUG
             imgWriter.fill(0xff0000ff);
     #endif
@@ -224,9 +232,6 @@ int main(int argc, char* argv[])
                 frame.append_child("string").text().set(ss.str().c_str());
             }
 
-            imgWriter.write(dst + "_" + std::to_string(p)  + ".png");
-
-
             rootDict.append_child("key").text().set("metadata");
             auto metadata = rootDict.append_child("dict");
             metadata.append_child("key").text().set("format");
@@ -240,17 +245,24 @@ int main(int argc, char* argv[])
             metadata.append_child("string").text().set(realTextureFileName.c_str());
             metadata.append_child("key").text().set("size");
             ss.str(std::string());
-            ss << "{" << result[p].w << "," << result[p].h << "}";
+            ss << "{" << textures[p].w << "," << textures[p].h << "}";
             metadata.append_child("string").text().set(ss.str().c_str());
+            metadata.append_child("key").text().set("smartupdate");
+            metadata.append_child("string").text().set("");
             metadata.append_child("key").text().set("textureFileName");
             metadata.append_child("string").text().set(realTextureFileName.c_str());
 
             if (!doc.save_file((dst + "_" + std::to_string(p) + ".plist").c_str()))
                 throw::std::runtime_error("error save xml document");
+
+            imgWriter.write(dst + "_" + std::to_string(p) + ".png");
         }
     }
     catch (std::exception& e)
     {
         std::cout << e.what() << "\n";
+        return EXIT_FAILURE;
     }
+
+    return EXIT_SUCCESS;
 }

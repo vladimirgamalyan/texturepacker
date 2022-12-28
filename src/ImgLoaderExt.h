@@ -19,11 +19,12 @@ public:
 	uint32_t x = 0;
 	uint32_t y = 0;
 	int page = -1;
-	bool flipped = 0;
+	bool flipped = false;
 	std::string lastFileName;
 
 	CropRect cropRect;
 
+private:
 	void crop();
 	void fixCrop();
 	void fillCrop();
