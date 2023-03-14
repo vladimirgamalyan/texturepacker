@@ -8,6 +8,7 @@ bool ImgLoaderExt::load(const std::string& fileName)
 		return false;
 
 	crop();
+	extendCrop();
 	fixCrop();
 #ifdef _DEBUG
 	fillCrop();
@@ -116,6 +117,33 @@ void ImgLoaderExt::crop()
 	cropRect.x = x0;
 	cropRect.y = y0;
 	cropRect.w = x1 - x0;
+}
+
+void ImgLoaderExt::extendCrop()
+{
+	/*
+		Сокращаем кроп со всех сторон на один пиксель, там где это возможно.
+		Это нужно для того, чтобы при последующем повторе пограничных пикселей они были прозрачными
+		если оригинальная картинка не касалась бордюра.
+	*/
+
+	if (cropRect.x > 0)
+	{
+		--cropRect.x;
+		++cropRect.w;
+	}
+
+	if (cropRect.y > 0)
+	{
+		--cropRect.y;
+		++cropRect.h;
+	}
+
+	if (cropRect.x + cropRect.w < getW())
+		++cropRect.w;
+
+	if (cropRect.y + cropRect.h < getH())
+		++cropRect.h;
 }
 
 void ImgLoaderExt::fixCrop()

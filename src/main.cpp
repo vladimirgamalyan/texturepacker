@@ -53,20 +53,20 @@ struct Size
 
 int main(int argc, char* argv[])
 {
-    const int spacingHor = 1;
-    const int spacingVer = 1;
-    const bool cropTexturesWidth = true;
-    const bool cropTexturesHeight = true;
-
-
     CLI::App app{ "Texture Packer" };
 
     std::string src;
     std::string dst;
+    int flagExtendBorder{ 0 };
     app.add_option("source", src, "source directory")->required()->check(CLI::ExistingDirectory);
     app.add_option("output", dst, "output files")->required()->check(ParentPath);
-
+    app.add_flag("--extend-border", flagExtendBorder, "extend border pixels");
     CLI11_PARSE(app, argc, argv);
+
+    const int spacingHor = flagExtendBorder ? 2 : 0;
+    const int spacingVer = flagExtendBorder ? 2 : 0;
+	const bool cropTexturesWidth = true;
+	const bool cropTexturesHeight = true;
 
     try
     {
@@ -156,12 +156,12 @@ int main(int argc, char* argv[])
                 const int w = images[r.tag].cropRect.w + spacingHor;
                 const int h = images[r.tag].cropRect.h + spacingVer;
 
-                images[r.tag].flipped = w != r.width;
+                images[r.tag].rotated = w != r.width;
                 images[r.tag].x = x;
                 images[r.tag].y = y;
                 images[r.tag].page = static_cast<int>(textures.size());
 
-                assert(images[r.tag].flipped ? w == r.height && h == r.width : w == r.width && h == r.height);
+                assert(images[r.tag].rotated ? w == r.height && h == r.width : w == r.width && h == r.height);
 
                 if (maxX < x + r.width)
                     maxX = x + r.width;
@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
                 if (i.page != p)
                     continue;
 
-                imgWriter.paste(i);
+                imgWriter.paste(i, flagExtendBorder);
 
                 const std::string f = std::filesystem::relative(i.lastFileName, src).generic_string();
                 frames.append_child("key").text().set(f.c_str());
@@ -221,7 +221,7 @@ int main(int argc, char* argv[])
                 ss << "{" << offsetX << "," << -offsetY << "}";
                 frame.append_child("string").text().set(ss.str().c_str());
                 frame.append_child("key").text().set("rotated");
-                frame.append_child(i.flipped ? "true" : "false");
+                frame.append_child(i.rotated ? "true" : "false");
                 frame.append_child("key").text().set("sourceColorRect");
                 ss.str(std::string());
                 ss << "{{" << i.cropRect.x << "," << i.cropRect.y << "},{" << i.cropRect.w << "," << i.cropRect.h << "}}";
