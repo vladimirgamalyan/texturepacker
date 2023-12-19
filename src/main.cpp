@@ -58,9 +58,11 @@ int main(int argc, char* argv[])
     std::string src;
     std::string dst;
     int flagExtendBorder{ 0 };
+    bool flagSuffixDisabled{ false };
     app.add_option("source", src, "source directory")->required()->check(CLI::ExistingDirectory);
     app.add_option("output", dst, "output files")->required()->check(ParentPath);
     app.add_flag("--extend-border", flagExtendBorder, "extend border pixels");
+    app.add_flag("--suffix-disabled", flagSuffixDisabled, "disable name suffix");
     CLI11_PARSE(app, argc, argv);
 
     const int spacingHor = flagExtendBorder ? 2 : 0;
@@ -176,6 +178,10 @@ int main(int argc, char* argv[])
             textures.push_back(lastSize);
         }
 
+        if (flagSuffixDisabled)
+            if (textures.size() > 1)
+                throw std::runtime_error("--suffix-disabled used with more than one output file");
+
         // save textures and plist files
         std::stringstream ss;
         for (size_t p = 0; p < textures.size(); ++p)
@@ -232,6 +238,20 @@ int main(int argc, char* argv[])
                 frame.append_child("string").text().set(ss.str().c_str());
             }
 
+			std::string xmlFileName;
+			std::string pngFileName;
+
+			if (flagSuffixDisabled)
+			{
+				xmlFileName = dst + ".plist";
+				pngFileName = dst + ".png";
+			}
+			else
+			{
+				xmlFileName = dst + "_" + std::to_string(p) + ".plist";
+				pngFileName = dst + "_" + std::to_string(p) + ".png";
+			}
+
             rootDict.append_child("key").text().set("metadata");
             auto metadata = rootDict.append_child("dict");
             metadata.append_child("key").text().set("format");
@@ -241,7 +261,7 @@ int main(int argc, char* argv[])
             metadata.append_child("key").text().set("premultiplyAlpha");
             metadata.append_child("false");
             metadata.append_child("key").text().set("realTextureFileName");
-            std::string realTextureFileName = std::filesystem::path(dst + "_" + std::to_string(p) + ".png").filename().generic_string();
+            std::string realTextureFileName = std::filesystem::path(pngFileName).filename().generic_string();
             metadata.append_child("string").text().set(realTextureFileName.c_str());
             metadata.append_child("key").text().set("size");
             ss.str(std::string());
@@ -251,11 +271,11 @@ int main(int argc, char* argv[])
             metadata.append_child("string").text().set("");
             metadata.append_child("key").text().set("textureFileName");
             metadata.append_child("string").text().set(realTextureFileName.c_str());
-
-            if (!doc.save_file((dst + "_" + std::to_string(p) + ".plist").c_str()))
+           
+            if (!doc.save_file(xmlFileName.c_str()))
                 throw::std::runtime_error("error save xml document");
 
-            imgWriter.write(dst + "_" + std::to_string(p) + ".png");
+            imgWriter.write(pngFileName);
         }
     }
     catch (std::exception& e)
